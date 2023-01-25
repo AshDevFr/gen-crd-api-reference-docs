@@ -1,5 +1,7 @@
 # Kubernetes Custom Resource API Reference Docs generator
 
+Original Repo: https://github.com/ahmetb/gen-crd-api-reference-docs
+
 If you have a project that is providing Custom Resource Definitions and wanted to generate
 API Reference Docs [like this][ar] this tool is for you.
 
