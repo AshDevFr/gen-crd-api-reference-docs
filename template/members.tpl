@@ -22,11 +22,27 @@
             </p>
         {{ end}}
 
+        {{ safe (renderComments .CommentLines) }}
+
         {{ if isOptionalMember .}}
             <em>(Optional)</em>
         {{ end }}
 
-        {{ safe (renderComments .CommentLines) }}
+        {{ if isNullableMember . }}
+            <em>(Nullable)</em>
+        {{ end }}
+
+        {{ if defaultMemberValue . }}
+            <p>Default: {{defaultMemberValue .}}</p>
+        {{ end }}
+
+        {{ if hasMemberValidations . }}
+            <p><b>Validations:</b>
+                {{range $k, $v := (memberValidations .)}}
+                    <br/><i>{{$k}}: </i>{{$v}}
+                {{end}}
+            </p>
+        {{ end }}
 
     {{ if and (eq (.Type.Name.Name) "ObjectMeta") }}
         Refer to the Kubernetes API documentation for the fields of the
