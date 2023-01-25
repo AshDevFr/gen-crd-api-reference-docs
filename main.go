@@ -597,6 +597,34 @@ func isOptionalMember(m types.Member) bool {
 	return ok
 }
 
+func isNullableMember(m types.Member) bool {
+	tags := types.ExtractCommentTags("+", m.CommentLines)
+	_, ok := tags["nullable"]
+	return ok
+}
+
+func defaultMemberValue(m types.Member) string {
+	tags := types.ExtractCommentTags("+kubebuilder:", m.CommentLines)
+	if value, ok := tags["default"]; ok {
+		return strings.Join(value, ", ")
+	}
+	return ""
+}
+
+func memberValidations(m types.Member) map[string]string {
+	tags := types.ExtractCommentTags("+kubebuilder:validation:", m.CommentLines)
+	tagMap := make(map[string]string)
+	for key, value := range tags {
+		tagMap[key] = strings.Join(value, ", ")
+	}
+	return tagMap
+}
+
+func hasMemberValidations(m types.Member) bool {
+	tags := types.ExtractCommentTags("+kubebuilder:validation:", m.CommentLines)
+	return len(tags) > 0
+}
+
 func apiVersionForPackage(pkg *types.Package) (string, string, error) {
 	group := groupName(pkg)
 	version := pkg.Name // assumes basename (i.e. "v1" in "core/v1") is apiVersion
@@ -677,14 +705,18 @@ func render(w io.Writer, pkgs []*apiPackage, config generatorConfig) error {
 			}
 			return v
 		},
-		"anchorIDForType":  func(t *types.Type) string { return anchorIDForLocalType(t, typePkgMap) },
-		"safe":             safe,
-		"sortedTypes":      sortTypes,
-		"typeReferences":   func(t *types.Type) []*types.Type { return typeReferences(t, config, references) },
-		"hiddenMember":     func(m types.Member) bool { return hiddenMember(m, config) },
-		"isLocalType":      isLocalType,
-		"isOptionalMember": isOptionalMember,
-		"constantsOfType":  func(t *types.Type) []*types.Type { return constantsOfType(t, typePkgMap[t]) },
+		"anchorIDForType":      func(t *types.Type) string { return anchorIDForLocalType(t, typePkgMap) },
+		"safe":                 safe,
+		"sortedTypes":          sortTypes,
+		"typeReferences":       func(t *types.Type) []*types.Type { return typeReferences(t, config, references) },
+		"hiddenMember":         func(m types.Member) bool { return hiddenMember(m, config) },
+		"isLocalType":          isLocalType,
+		"isOptionalMember":     isOptionalMember,
+		"isNullableMember":     isNullableMember,
+		"defaultMemberValue":   defaultMemberValue,
+		"hasMemberValidations": hasMemberValidations,
+		"memberValidations":    memberValidations,
+		"constantsOfType":      func(t *types.Type) []*types.Type { return constantsOfType(t, typePkgMap[t]) },
 	}).ParseGlob(filepath.Join(*flTemplateDir, "*.tpl"))
 	if err != nil {
 		return errors.Wrap(err, "parse error")
